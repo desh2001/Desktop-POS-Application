@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import AdminLayout from './pages/admin/AdminLayout';
+import Cashier from './pages/Cashier';
+import Bill from './pages/print/Bill';
+import { useAuthStore } from './store/useAuthStore';
+
+// Protected Route Wrapper
+function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) {
+  const user = useAuthStore((state) => state.user);
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+// Placeholders removed
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50">
-      <div className="bg-white p-8 rounded-xl shadow-lg flex flex-col items-center">
-        <h1 className="text-4xl font-bold text-slate-800 mb-4">Desktop POS</h1>
-        <p className="text-slate-600 mb-8">Electron + React + Tailwind v4 + Mongoose</p>
-        <button 
-          onClick={() => setCount(c => c + 1)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors cursor-pointer"
-        >
-          Count is {count}
-        </button>
-      </div>
-    </div>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        
+        <Route path="/admin/*" element={
+          <ProtectedRoute allowedRoles={['Admin']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/cashier/*" element={
+          <ProtectedRoute allowedRoles={['Admin', 'Worker']}>
+            <Cashier />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/print/:type" element={<Bill />} />
+      </Routes>
+    </HashRouter>
   );
 }
 

@@ -1,14 +1,18 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { join } from 'path';
+import { app, BrowserWindow } from 'electron';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './database.js';
 import { registerIpcHandlers } from './ipc.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, 'index.cjs'),
       sandbox: false,
       contextIsolation: true
     }

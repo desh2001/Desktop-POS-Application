@@ -10,9 +10,23 @@ export default defineConfig({
     electron({
       main: {
         entry: 'src/main/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['mongoose', 'dotenv', 'dotenv/config', 'bcryptjs']
+            }
+          }
+        }
       },
       preload: {
         input: 'src/preload/index.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              output: { format: 'cjs', entryFileNames: '[name].cjs' }
+            }
+          }
+        }
       },
     }),
   ],
