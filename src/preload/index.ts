@@ -6,6 +6,12 @@ contextBridge.exposeInMainWorld('api', {
     login: (credentials: any) => ipcRenderer.invoke('auth:login', credentials),
     initAdmin: (credentials: any) => ipcRenderer.invoke('auth:initAdmin', credentials)
   },
+  users: {
+    getUsers: () => ipcRenderer.invoke('users:get'),
+    addUser: (data: any) => ipcRenderer.invoke('users:add', data),
+    updateUser: (id: string, data: any) => ipcRenderer.invoke('users:update', { id, data }),
+    deleteUser: (id: string) => ipcRenderer.invoke('users:delete', id),
+  },
   inventory: {
     getItems: () => ipcRenderer.invoke('items:get'),
     addItem: (data: any) => ipcRenderer.invoke('items:add', data),

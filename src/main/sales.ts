@@ -7,8 +7,7 @@ export function registerSalesHandlers() {
     try {
       const newSale = new Sale(saleData);
       await newSale.save();
-      
-      // Update inventory stock by decrementing purchased quantities
+
       for (const cartItem of saleData.items) {
         await Item.findByIdAndUpdate(cartItem.item, { $inc: { stock: -cartItem.quantity } });
       }

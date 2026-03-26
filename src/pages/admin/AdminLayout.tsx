@@ -2,11 +2,13 @@ import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Inventory from './Inventory';
 import Settings from './Settings';
+import Transactions from './Transactions';
+import Users from './Users';
 import { useAuthStore } from '../../store/useAuthStore';
-import { LogOut, Package, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Package, Settings as SettingsIcon, History, Users as UsersIcon } from 'lucide-react';
 
 export default function AdminLayout() {
-  const logout = useAuthStore((state) => state.logout);
+  const logout = useAuthStore(state => state.logout);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -15,34 +17,42 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100">
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10">
-        <div className="p-6 border-b border-slate-100">
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Admin</h2>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <Link to="" className="flex items-center gap-3 px-4 py-3 text-slate-700 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-            <Package size={20} className="text-primary-600" />
-            <span className="font-medium">Inventory</span>
+    <div className="flex h-screen bg-slate-50">
+      <div className="w-64 bg-slate-900 border-r border-slate-200 flex flex-col items-center py-8">
+        <h2 className="text-xl font-bold mb-8 text-white">Admin Dashboard</h2>
+        <nav className="w-full">
+          <Link to="/admin" className="flex items-center px-6 py-3 border-b border-t border-slate-700 hover:bg-slate-800 text-white font-medium">
+            <Package className="mr-3" size={20} />
+            Inventory
           </Link>
-          <Link to="settings" className="flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer">
-            <SettingsIcon size={20} className="text-slate-500" />
-            <span className="font-medium">Settings</span>
+          <Link to="/admin/transactions" className="flex items-center px-6 py-3 border-b border-slate-700 hover:bg-slate-800 text-white font-medium">
+            <History className="mr-3" size={20} />
+            Transactions
+          </Link>
+          <Link to="/admin/users" className="flex items-center px-6 py-3 border-b border-slate-700 hover:bg-slate-800 text-white font-medium">
+            <UsersIcon className="mr-3" size={20} />
+            Users
+          </Link>
+          <Link to="/admin/settings" className="flex items-center px-6 py-3 border-b border-slate-700 hover:bg-slate-800 text-white font-medium">
+            <SettingsIcon className="mr-3" size={20} />
+            Settings
           </Link>
         </nav>
-        <div className="p-4 border-t border-slate-100">
-          <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer font-medium">
-            <LogOut size={20} />
+        <div className="mt-auto w-full">
+          <button onClick={handleLogout} className="flex w-full items-center px-6 py-3 hover:bg-red-500 text-red-400 hover:text-white font-medium mt-auto transition-colors">
+            <LogOut className="mr-3" size={20} />
             Logout
           </button>
         </div>
-      </aside>
-      <main className="flex-1 overflow-auto bg-slate-50/50">
+      </div>
+      <div className="flex-1 p-8 overflow-y-auto">
         <Routes>
           <Route path="/" element={<Inventory />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
-      </main>
+      </div>
     </div>
   );
 }

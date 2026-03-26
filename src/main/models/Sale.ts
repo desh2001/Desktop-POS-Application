@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 
 const SaleItemSchema = new Schema({
-  item: { type: Schema.Types.ObjectId, ref: 'Item', required: true },
+  item: { type: Schema.Types.ObjectId, ref: 'Item' },
   name: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true },

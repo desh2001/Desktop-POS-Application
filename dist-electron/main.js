@@ -85,6 +85,72 @@ function registerAuthHandlers() {
 			};
 		}
 	});
+	ipcMain.handle("users:get", async () => {
+		try {
+			const users = await User.find({}, "-password");
+			return {
+				success: true,
+				users: JSON.parse(JSON.stringify(users))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("users:add", async (_, { username, password, role }) => {
+		try {
+			const newUser = new User({
+				username,
+				password: await bcrypt.hash(password, 10),
+				role
+			});
+			await newUser.save();
+			const safeUser = {
+				_id: newUser._id,
+				username: newUser.username,
+				role: newUser.role,
+				createdAt: newUser.createdAt
+			};
+			return {
+				success: true,
+				user: JSON.parse(JSON.stringify(safeUser))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("users:update", async (_, { id, data }) => {
+		try {
+			if (data.password) data.password = await bcrypt.hash(data.password, 10);
+			else delete data.password;
+			const updated = await User.findByIdAndUpdate(id, data, { new: true });
+			return {
+				success: true,
+				user: JSON.parse(JSON.stringify(updated))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("users:delete", async (_, id) => {
+		try {
+			await User.findByIdAndDelete(id);
+			return { success: true };
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
 }
 //#endregion
 //#region src/main/models/Item.ts
@@ -216,8 +282,7 @@ function registerInventoryHandlers() {
 var SaleItemSchema = new Schema({
 	item: {
 		type: Schema.Types.ObjectId,
-		ref: "Item",
-		required: true
+		ref: "Item"
 	},
 	name: {
 		type: String,

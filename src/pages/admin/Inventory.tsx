@@ -1,164 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
-
-interface Item {
-  _id: string;
-  name: string;
-  price: number;
-  stock: number;
-  category: string;
-}
+import { Edit, Trash2, Plus } from 'lucide-react';
 
 export default function Inventory() {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
-  
-  // Form State
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [stock, setStock] = useState('');
-  const [category, setCategory] = useState('General');
+  const [formData, setFormData] = useState({ _id: '', name: '', price: 0, stock: 0, category: 'General' });
 
   useEffect(() => {
     loadItems();
   }, []);
 
   const loadItems = async () => {
-    const res = await (window as any).api.inventory.getItems();
-    if (res.success) setItems(res.items);
+    const response = await (window as any).api.inventory.getItems();
+    if (response.success) {
+      setItems(response.items);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { name, price: Number(price), stock: Number(stock), category };
-    
-    if (editingItem) {
-      await (window as any).api.inventory.updateItem(editingItem._id, data);
+    if (formData._id) {
+      await (window as any).api.inventory.updateItem(formData._id, formData);
     } else {
-      await (window as any).api.inventory.addItem(data);
+      await (window as any).api.inventory.addItem(formData);
     }
-    
     setShowModal(false);
     loadItems();
-    resetForm();
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this item?')) {
+    if (confirm("Are you sure?")) {
       await (window as any).api.inventory.deleteItem(id);
       loadItems();
     }
   };
 
-  const resetForm = () => {
-    setName('');
-    setPrice('');
-    setStock('');
-    setCategory('General');
-    setEditingItem(null);
-  };
-
-  const openModal = (item?: Item) => {
+  const openModal = (item?: any) => {
     if (item) {
-      setEditingItem(item);
-      setName(item.name);
-      setPrice(item.price.toString());
-      setStock(item.stock.toString());
-      setCategory(item.category);
+      setFormData(item);
     } else {
-      resetForm();
+      setFormData({ _id: '', name: '', price: 0, stock: 0, category: 'General' });
     }
     setShowModal(true);
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Inventory</h1>
-          <p className="text-slate-500 mt-1">Manage your products and stock levels.</p>
-        </div>
-        <button onClick={() => openModal()} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-sm cursor-pointer">
-          <Plus size={20} /> Add Item
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Inventory Management</h1>
+        <button onClick={() => openModal()} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center font-medium shadow-md">
+          <Plus size={18} className="mr-2" /> Add Item
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-sm tracking-wide">
-              <th className="p-4 font-semibold uppercase">Product Name</th>
-              <th className="p-4 font-semibold uppercase">Category</th>
-              <th className="p-4 font-semibold uppercase">Price</th>
-              <th className="p-4 font-semibold uppercase">Stock</th>
-              <th className="p-4 font-semibold uppercase text-right">Actions</th>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <tr>
+              <th className="p-4">Name</th>
+              <th className="p-4">Category</th>
+              <th className="p-4">Price</th>
+              <th className="p-4">Stock</th>
+              <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map(item => (
-              <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+              <tr key={item._id} className="hover:bg-slate-50">
                 <td className="p-4 font-medium text-slate-800">{item.name}</td>
-                <td className="p-4 text-slate-600">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                    {item.category}
+                <td className="p-4 text-slate-500">{item.category}</td>
+                <td className="p-4 text-slate-800 font-semibold">${item.price.toFixed(2)}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.stock > 10 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {item.stock}
                   </span>
                 </td>
-                <td className="p-4 text-slate-600">${item.price.toFixed(2)}</td>
-                <td className="p-4 text-slate-600">
-                  <span className={item.stock < 10 ? "text-red-600 font-medium" : ""}>{item.stock}</span>
-                </td>
-                <td className="p-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => openModal(item)} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer">
-                      <Edit2 size={18} />
-                    </button>
-                    <button onClick={() => handleDelete(item._id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                <td className="p-4 flex justify-center space-x-3">
+                  <button onClick={() => openModal(item)} className="text-primary-500 hover:text-primary-700"><Edit size={18} /></button>
+                  <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700"><Trash2 size={18} /></button>
                 </td>
               </tr>
             ))}
             {items.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-12 text-center text-slate-500">
-                  No items found. Add a product to get started.
-                </td>
-              </tr>
+              <tr><td colSpan={5} className="p-8 text-center text-slate-400">No items found. Click 'Add Item' to start.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-slate-800">{editingItem ? 'Edit Item' : 'New Item'}</h3>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 w-[400px] shadow-2xl">
+            <h2 className="text-xl font-bold mb-6 text-slate-800">{formData._id ? 'Edit Item' : 'New Item'}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Name</label>
-                <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" placeholder="Product name" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Item Name</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none"/>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                <input required type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none"/>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Price ($)</label>
-                  <input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="0.00" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Price ($)</label>
+                  <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none"/>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Stock</label>
-                  <input type="number" required value={stock} onChange={e => setStock(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="0" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Stock</label>
+                  <input required type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: Number(e.target.value)})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none"/>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Category</label>
-                <input type="text" value={category} onChange={e => setCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Beverages" />
-              </div>
-              <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium transition-colors shadow-sm cursor-pointer">Save Item</button>
+              <div className="flex justify-end space-x-3 pt-6 mt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-md">Save Item</button>
               </div>
             </form>
           </div>

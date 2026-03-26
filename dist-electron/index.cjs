@@ -6,6 +6,15 @@ electron.contextBridge.exposeInMainWorld("api", {
 		login: (credentials) => electron.ipcRenderer.invoke("auth:login", credentials),
 		initAdmin: (credentials) => electron.ipcRenderer.invoke("auth:initAdmin", credentials)
 	},
+	users: {
+		getUsers: () => electron.ipcRenderer.invoke("users:get"),
+		addUser: (data) => electron.ipcRenderer.invoke("users:add", data),
+		updateUser: (id, data) => electron.ipcRenderer.invoke("users:update", {
+			id,
+			data
+		}),
+		deleteUser: (id) => electron.ipcRenderer.invoke("users:delete", id)
+	},
 	inventory: {
 		getItems: () => electron.ipcRenderer.invoke("items:get"),
 		addItem: (data) => electron.ipcRenderer.invoke("items:add", data),

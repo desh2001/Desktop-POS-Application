@@ -40,7 +40,6 @@ export function registerInventoryHandlers() {
     }
   });
 
-  // Settings
   ipcMain.handle('settings:get', async (_, key) => {
     try {
       const setting = await Setting.findOne({ key });
