@@ -26,9 +26,18 @@ Make sure you have Node.js (v18+) and MongoDB installed on your system.
    ```bash
    npm install
    ```
-2. Environment Configuration:
-   - Ensure MongoDB is running locally. By default, the system will look for `mongodb://127.0.0.1:27017/posdb`. Ensure any `.env` adjustments are made if hosting the remote DB elsewhere.
-3. Start the application in development mode:
+2. **Database Initialization**
+   By default, the system will look for `mongodb://127.0.0.1:27017/posdb`. Ensure MongoDB is running locally before you begin.
+   
+   To create your first admin user in the database, run the seed script:
+   ```bash
+   node createAdmin.js <optional_username> <optional_password>
+   ```
+   *If you do not provide a username and password, it will default to `admin` / `admin123`.*
+   
+3. Environment Configuration:
+   - Ensure any `.env` adjustments are made if hosting the remote DB elsewhere.
+4. Start the application in development mode:
    ```bash
    npm run dev
    ```

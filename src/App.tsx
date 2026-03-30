@@ -7,7 +7,7 @@ import Bill from './pages/print/Bill';
 import { useAuthStore } from './store/useAuthStore';
 
 // Protected Route Wrapper
-function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) {
+function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) {
   const user = useAuthStore((state) => state.user);
   if (!user) {
     return <Navigate to="/" replace />;
@@ -15,10 +15,8 @@ function ProtectedRoute({ children, allowedRoles }: { children: JSX.Element, all
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
-  return children;
+  return <>{children}</>;
 }
-
-// Placeholders removed
 
 function App() {
   return (
