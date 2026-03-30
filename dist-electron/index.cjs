@@ -35,6 +35,10 @@ electron.contextBridge.exposeInMainWorld("api", {
 		createSale: (data) => electron.ipcRenderer.invoke("sales:create", data),
 		getSales: () => electron.ipcRenderer.invoke("sales:get")
 	},
+	quotations: {
+		createQuotation: (data) => electron.ipcRenderer.invoke("quotations:create", data),
+		getQuotations: () => electron.ipcRenderer.invoke("quotations:get")
+	},
 	print: { generatePdf: (urlPath, filename) => electron.ipcRenderer.invoke("pdf:generate", {
 		urlPath,
 		filename

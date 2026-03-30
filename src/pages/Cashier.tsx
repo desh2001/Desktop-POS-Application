@@ -112,6 +112,37 @@ export default function Cashier() {
     }
   };
 
+  const handleQuotation = async () => {
+    if (cart.length === 0) return;
+    
+    const quoteData = {
+      workerId: user?.id,
+      items: cart.map(i => ({ item: i._id, name: i.name, price: i.price, quantity: i.quantity })),
+      subtotal,
+      tax,
+      total,
+      amountTendered: Number(amountTendered) || 0,
+      change: change || 0
+    };
+
+    const res = await (window as any).api.quotations.createQuotation(quoteData);
+    if (res.success) {
+      const quoteId = res.quotation._id;
+      setCart([]);
+      setAmountTendered('');
+
+      const printRes = await (window as any).api.print.generatePdf('/print/quote', `Quotation_${quoteId.substring(quoteId.length - 8).toUpperCase()}.pdf`);
+      
+      if (printRes.success) {
+        alert(`Quotation generated! PDF strictly saved to: ${printRes.path}`);
+      } else {
+        alert("Quotation saved, but PDF generation failed: " + printRes.message);
+      }
+    } else {
+      alert("Error: " + res.message);
+    }
+  };
+
   const categories = ['All', ...Array.from(new Set(items.map(i => i.category)))];
   const filteredItems = items.filter(i => 
     (category === 'All' || i.category === category) &&
@@ -241,13 +272,22 @@ export default function Cashier() {
               </div>
             </div>
           </div>
-          <button 
-            onClick={handleCheckout}
-            disabled={cart.length === 0 || Number(amountTendered) < total}
-            className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-md cursor-pointer transition-colors text-lg"
-          >
-            Process Sale
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={handleQuotation}
+              disabled={cart.length === 0}
+              className="flex-1 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-md cursor-pointer transition-colors text-lg"
+            >
+              Quotation
+            </button>
+            <button 
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || Number(amountTendered) < total}
+              className="flex-[2] bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-md cursor-pointer transition-colors text-lg"
+            >
+              Process Sale
+            </button>
+          </div>
         </div>
       </aside>
     </div>

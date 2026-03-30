@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calendar, Receipt, MapPin, Phone, Mail, Hash, User } from 'lucide-react';
+import { Calendar, Phone, Mail, Hash, User } from 'lucide-react';
 import logo from '../../assets/logo icon.svg';
 
 export default function Bill() {
@@ -21,11 +21,18 @@ export default function Bill() {
       }
       const sn = await (window as any).api.settings.getSetting('storeName');
       if (sn?.value) setStoreName(sn.value);
-      const res = await (window as any).api.sales.getSales();
-      if (res.success && res.sales.length > 0) {
-        setSale(res.sales[0]);
+      
+      const isQuote = type === 'quote';
+      const res = isQuote 
+        ? await (window as any).api.quotations.getQuotations()
+        : await (window as any).api.sales.getSales();
+        
+      const records = isQuote ? res.quotations : res.sales;
+
+      if (res.success && records && records.length > 0) {
+        setSale(records[0]);
       } else {
-        setError("No sales found to print.");
+        setError(`No ${isQuote ? 'quotations' : 'sales'} found to print.`);
       }
     } catch (err: any) {
       setError(err.message || String(err));
@@ -83,10 +90,10 @@ export default function Bill() {
           <div className="grid grid-cols-3 gap-6 mb-10 shrink-0">
             <div className="space-y-1">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <User size={12} className="text-primary-500" /> Billed To
+                <User size={12} className="text-primary-500" /> {isQuote ? 'Quoted To' : 'Billed To'}
               </h4>
               <p className="text-md font-bold text-slate-800">Walk-in Customer</p>
-              <p className="text-slate-500 text-xs">Standard Retail Channel</p>
+              <p className="text-slate-500 text-xs">{isQuote ? 'Prospective Client' : 'Standard Retail Channel'}</p>
             </div>
             
             <div className="space-y-1 border-x border-slate-100 px-6">
@@ -94,12 +101,16 @@ export default function Bill() {
                 <Hash size={12} className="text-primary-500" /> Reference
               </h4>
               <p className="text-md font-bold text-slate-800 uppercase">#{sale._id.toString().slice(-8)}</p>
-              <p className="text-slate-500 text-xs">{new Date(sale.createdAt).toLocaleDateString()}</p>
+              {isQuote ? (
+                <p className="text-primary-600 text-[10px] font-bold mt-1 uppercase tracking-wider">Valid until: {new Date(new Date(sale.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+              ) : (
+                <p className="text-slate-500 text-xs">{new Date(sale.createdAt).toLocaleDateString()}</p>
+              )}
             </div>
 
             <div className="space-y-1 text-right">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex justify-end items-center gap-2">
-                <Calendar size={12} className="text-primary-500" /> Timestamp
+                <Calendar size={12} className="text-primary-500" /> {isQuote ? 'Quote Date' : 'Timestamp'}
               </h4>
               <p className="text-md font-bold text-slate-800">
                 {new Date(sale.createdAt).toLocaleDateString()} <span className="text-slate-400 text-sm ml-1">{new Date(sale.createdAt).toLocaleTimeString()}</span>
@@ -141,27 +152,29 @@ export default function Bill() {
           <div className="flex justify-between items-end mb-10 shrink-0 gap-4">
             {/* Left Side: QR & Terms */}
             <div className="flex gap-4 items-center w-[280px] shrink-0">
-              <div className="p-1.5 bg-white border border-slate-200 rounded-lg shadow-sm shrink-0">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${sale._id}`} 
-                  alt="Transaction QR" 
-                  className="w-12 h-12 opacity-80"
-                />
-                <p className="text-[6px] text-center mt-1 font-black text-slate-400 uppercase tracking-tighter">Scan to Verify</p>
-              </div>
+              {!isQuote && (
+                <div className="p-1.5 bg-white border border-slate-200 rounded-lg shadow-sm shrink-0">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${sale._id}`} 
+                    alt="Transaction QR" 
+                    className="w-12 h-12 opacity-80"
+                  />
+                  <p className="text-[6px] text-center mt-1 font-black text-slate-400 uppercase tracking-tighter">Scan to Verify</p>
+                </div>
+              )}
               
               <div className="text-[8px] text-slate-400 font-medium leading-tight pb-1">
-                <p className="uppercase tracking-widest font-black text-slate-500 mb-1">Notice</p>
-                <p>Digital record of sale. This document is system generated and remains valid without a physical stamp.</p>
+                <p className="uppercase tracking-widest font-black text-slate-500 mb-1">{isQuote ? 'Terms & Conditions' : 'Notice'}</p>
+                <p>{isQuote ? 'This quotation is valid for 30 days from the date of issue. Prices correspond to current rates and are subject to change without notice.' : 'Digital record of sale. This document is system generated and remains valid without a physical stamp.'}</p>
               </div>
             </div>
 
             {/* Middle: Signature Area */}
             <div className="flex-1 px-4 text-center shrink-0 mb-1">
               <div className="border-b border-slate-300 w-24 mx-auto mb-1.5 h-8 flex items-end justify-center">
-                <span className="font-serif italic text-slate-400 text-xs opacity-50">Deshan</span>
+                <span className="font-serif italic text-slate-400 text-xs opacity-50">Authorized</span>
               </div>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Store Manager</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{isQuote ? 'Prepared By' : 'Store Manager'}</p>
             </div>
 
             {/* Right Side: Totals */}

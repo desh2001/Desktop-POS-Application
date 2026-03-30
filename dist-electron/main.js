@@ -403,6 +403,89 @@ function registerPdfHandlers() {
 	});
 }
 //#endregion
+//#region src/main/models/Quotation.ts
+var QuotationItemSchema = new Schema({
+	item: {
+		type: Schema.Types.ObjectId,
+		ref: "Item"
+	},
+	name: {
+		type: String,
+		required: true
+	},
+	price: {
+		type: Number,
+		required: true
+	},
+	quantity: {
+		type: Number,
+		required: true
+	}
+});
+var QuotationSchema = new Schema({
+	workerId: {
+		type: Schema.Types.ObjectId,
+		ref: "User"
+	},
+	items: [QuotationItemSchema],
+	subtotal: {
+		type: Number,
+		required: true
+	},
+	tax: {
+		type: Number,
+		required: true
+	},
+	total: {
+		type: Number,
+		required: true
+	},
+	amountTendered: {
+		type: Number,
+		required: false,
+		default: 0
+	},
+	change: {
+		type: Number,
+		required: false,
+		default: 0
+	}
+}, { timestamps: true });
+var Quotation = mongoose.model("Quotation", QuotationSchema);
+//#endregion
+//#region src/main/quotations.ts
+function registerQuotationHandlers() {
+	ipcMain.handle("quotations:create", async (_, quotationData) => {
+		try {
+			const newQuotation = new Quotation(quotationData);
+			await newQuotation.save();
+			return {
+				success: true,
+				quotation: JSON.parse(JSON.stringify(newQuotation))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("quotations:get", async () => {
+		try {
+			const quotations = await Quotation.find().sort({ createdAt: -1 });
+			return {
+				success: true,
+				quotations: JSON.parse(JSON.stringify(quotations))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+}
+//#endregion
 //#region src/main/ipc.ts
 function registerIpcHandlers() {
 	ipcMain.handle("ping", () => "pong");
@@ -410,6 +493,7 @@ function registerIpcHandlers() {
 	registerInventoryHandlers();
 	registerSalesHandlers();
 	registerPdfHandlers();
+	registerQuotationHandlers();
 }
 //#endregion
 //#region src/main/main.ts
