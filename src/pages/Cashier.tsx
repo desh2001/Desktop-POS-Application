@@ -22,6 +22,7 @@ export default function Cashier() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [amountTendered, setAmountTendered] = useState<string>('');
+  const [customerName, setCustomerName] = useState('');
   
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
@@ -85,6 +86,7 @@ export default function Cashier() {
     
     const saleData = {
       workerId: user?.id,
+      customerName: customerName.trim() || undefined,
       items: cart.map(i => ({ item: i._id, name: i.name, price: i.price, quantity: i.quantity })),
       subtotal,
       tax,
@@ -98,6 +100,7 @@ export default function Cashier() {
       const saleId = res.sale._id;
       setCart([]);
       setAmountTendered('');
+      setCustomerName('');
       loadInventory(); 
 
       const printRes = await (window as any).api.print.generatePdf('/print/bill', `Receipt_${saleId.substring(saleId.length - 8).toUpperCase()}.pdf`);
@@ -117,6 +120,7 @@ export default function Cashier() {
     
     const quoteData = {
       workerId: user?.id,
+      customerName: customerName.trim() || undefined,
       items: cart.map(i => ({ item: i._id, name: i.name, price: i.price, quantity: i.quantity })),
       subtotal,
       tax,
@@ -130,6 +134,7 @@ export default function Cashier() {
       const quoteId = res.quotation._id;
       setCart([]);
       setAmountTendered('');
+      setCustomerName('');
 
       const printRes = await (window as any).api.print.generatePdf('/print/quote', `Quotation_${quoteId.substring(quoteId.length - 8).toUpperCase()}.pdf`);
       
@@ -240,6 +245,15 @@ export default function Cashier() {
 
         <div className="p-6 bg-slate-50 border-t border-slate-200">
           <div className="space-y-3 mb-6">
+            <div className="mb-4">
+              <input 
+                type="text" 
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm placeholder-slate-400 transition-shadow"
+                placeholder="Customer Name (Optional)"
+              />
+            </div>
             <div className="flex justify-between text-slate-600">
               <span>Subtotal</span>
               <span className="font-medium">${subtotal.toFixed(2)}</span>

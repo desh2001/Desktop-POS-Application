@@ -9,6 +9,7 @@ const QuotationItemSchema = new Schema({
 
 const QuotationSchema = new Schema({
   workerId: { type: Schema.Types.ObjectId, ref: 'User' },
+  customerName: { type: String, required: false },
   items: [QuotationItemSchema],
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },

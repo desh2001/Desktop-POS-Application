@@ -9,6 +9,7 @@ const SaleItemSchema = new Schema({
 
 const SaleSchema = new Schema({
   workerId: { type: Schema.Types.ObjectId, ref: 'User' },
+  customerName: { type: String, required: false },
   items: [SaleItemSchema],
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },

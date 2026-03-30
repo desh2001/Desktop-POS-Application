@@ -17,7 +17,7 @@ export function registerQuotationHandlers() {
 
   ipcMain.handle('quotations:get', async () => {
     try {
-      const quotations = await Quotation.find().sort({ createdAt: -1 });
+      const quotations = await Quotation.find().populate('workerId', 'username').sort({ createdAt: -1 });
       return { success: true, quotations: JSON.parse(JSON.stringify(quotations)) };
     } catch (err: any) {
       return { success: false, message: err.message };

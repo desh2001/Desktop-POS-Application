@@ -92,8 +92,8 @@ export default function Bill() {
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <User size={12} className="text-primary-500" /> {isQuote ? 'Quoted To' : 'Billed To'}
               </h4>
-              <p className="text-md font-bold text-slate-800">Walk-in Customer</p>
-              <p className="text-slate-500 text-xs">{isQuote ? 'Prospective Client' : 'Standard Retail Channel'}</p>
+              <p className="text-md font-bold text-slate-800">{sale.customerName || 'Walk-in Customer'}</p>
+              <p className="text-slate-500 text-xs">{isQuote && sale.customerName ? 'Direct Client' : (isQuote ? 'Prospective Client' : 'Standard Retail Channel')}</p>
             </div>
             
             <div className="space-y-1 border-x border-slate-100 px-6">
@@ -115,7 +115,7 @@ export default function Bill() {
               <p className="text-md font-bold text-slate-800">
                 {new Date(sale.createdAt).toLocaleDateString()} <span className="text-slate-400 text-sm ml-1">{new Date(sale.createdAt).toLocaleTimeString()}</span>
               </p>
-              <p className="text-slate-500 text-xs">Terminal ID: {sale.workerId ? sale.workerId.toString().slice(-4).toUpperCase() : 'MAIN'}</p>
+              <p className="text-slate-500 text-xs">Terminal ID: {sale.workerId ? (typeof sale.workerId === 'object' && sale.workerId._id ? sale.workerId._id.toString() : sale.workerId.toString()).slice(-4).toUpperCase() : 'MAIN'}</p>
             </div>
           </div>
 
@@ -172,7 +172,9 @@ export default function Bill() {
             {/* Middle: Signature Area */}
             <div className="flex-1 px-4 text-center shrink-0 mb-1">
               <div className="border-b border-slate-300 w-24 mx-auto mb-1.5 h-8 flex items-end justify-center">
-                <span className="font-serif italic text-slate-400 text-xs opacity-50">Authorized</span>
+                <span className="font-serif italic text-slate-400 text-xs opacity-50">
+                  {isQuote ? (sale.workerId?.username || 'Authorized') : 'Authorized'}
+                </span>
               </div>
               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{isQuote ? 'Prepared By' : 'Store Manager'}</p>
             </div>

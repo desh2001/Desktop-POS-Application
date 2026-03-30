@@ -302,6 +302,10 @@ var SaleSchema = new Schema({
 		type: Schema.Types.ObjectId,
 		ref: "User"
 	},
+	customerName: {
+		type: String,
+		required: false
+	},
 	items: [SaleItemSchema],
 	subtotal: {
 		type: Number,
@@ -427,6 +431,10 @@ var QuotationSchema = new Schema({
 		type: Schema.Types.ObjectId,
 		ref: "User"
 	},
+	customerName: {
+		type: String,
+		required: false
+	},
 	items: [QuotationItemSchema],
 	subtotal: {
 		type: Number,
@@ -472,7 +480,7 @@ function registerQuotationHandlers() {
 	});
 	ipcMain.handle("quotations:get", async () => {
 		try {
-			const quotations = await Quotation.find().sort({ createdAt: -1 });
+			const quotations = await Quotation.find().populate("workerId", "username").sort({ createdAt: -1 });
 			return {
 				success: true,
 				quotations: JSON.parse(JSON.stringify(quotations))
