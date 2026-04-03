@@ -25,13 +25,13 @@ function App() {
         <Route path="/" element={<Login />} />
         
         <Route path="/admin/*" element={
-          <ProtectedRoute allowedRoles={['Admin']}>
+          <ProtectedRoute allowedRoles={['Admin', 'Stock Manager']}>
             <AdminLayout />
           </ProtectedRoute>
         } />
         
         <Route path="/cashier/*" element={
-          <ProtectedRoute allowedRoles={['Admin', 'Worker']}>
+          <ProtectedRoute allowedRoles={['Admin', 'Employee']}>
             <Cashier />
           </ProtectedRoute>
         } />

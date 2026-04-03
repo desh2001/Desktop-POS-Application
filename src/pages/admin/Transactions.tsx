@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { History, Receipt, X, PackageOpen, MousePointerClick } from 'lucide-react';
+import { History, Receipt, X, PackageOpen, MousePointerClick, ShieldAlert } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function Transactions() {
+  const user = useAuthStore(state => state.user);
   const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState<any>(null);
@@ -41,8 +43,8 @@ export default function Transactions() {
               <tr>
                 <th className="p-4 uppercase text-xs font-black tracking-widest">Transaction ID</th>
                 <th className="p-4 uppercase text-xs font-black tracking-widest">Date & Time</th>
-                <th className="p-4 uppercase text-xs font-black tracking-widest text-center">Items Sold</th>
-                <th className="p-4 uppercase text-xs font-black tracking-widest text-right">Revenue</th>
+                <th className="p-4 uppercase text-xs font-black tracking-widest text-center">Items Sold Out</th>
+                {user?.role === 'Admin' && <th className="p-4 uppercase text-xs font-black tracking-widest text-right">Revenue</th>}
                 <th className="p-4 uppercase text-xs font-black tracking-widest text-center">Status</th>
               </tr>
             </thead>
@@ -63,14 +65,14 @@ export default function Transactions() {
                   <td className="p-4 text-slate-600 text-sm font-bold text-center group-hover:text-primary-700">
                     {sale.items.length} Product(s)
                   </td>
-                  <td className="p-4 text-emerald-600 font-black text-right text-base">${sale.total.toFixed(2)}</td>
+                  {user?.role === 'Admin' && <td className="p-4 text-emerald-600 font-black text-right text-base">${sale.total.toFixed(2)}</td>}
                   <td className="p-4 text-center">
                     <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-200 shadow-sm">Verified</span>
                   </td>
                 </tr>
               ))}
               {sales.length === 0 && (
-                <tr><td colSpan={5} className="p-12 text-center text-slate-400 font-medium">No sales transactions have been recorded yet.</td></tr>
+                <tr><td colSpan={user?.role === 'Admin' ? 5 : 4} className="p-12 text-center text-slate-400 font-medium">No stock out transactions have been recorded yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -112,8 +114,12 @@ export default function Transactions() {
                     <tr>
                       <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Description</th>
                       <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center w-20">Qty</th>
-                      <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Unit Price</th>
-                      <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Amount</th>
+                      {user?.role === 'Admin' && (
+                        <>
+                          <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Unit Price</th>
+                          <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Amount</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -121,8 +127,12 @@ export default function Transactions() {
                       <tr key={i} className="hover:bg-slate-50/50">
                         <td className="p-4 text-sm font-bold text-slate-800">{item.name}</td>
                         <td className="p-4 text-sm font-black text-slate-600 text-center bg-slate-50/30">{item.quantity}</td>
-                        <td className="p-4 text-sm text-slate-500 font-medium text-right">${item.price.toFixed(2)}</td>
-                        <td className="p-4 text-sm font-black text-slate-900 text-right">${(item.price * item.quantity).toFixed(2)}</td>
+                        {user?.role === 'Admin' && (
+                          <>
+                            <td className="p-4 text-sm text-slate-500 font-medium text-right">${item.price.toFixed(2)}</td>
+                            <td className="p-4 text-sm font-black text-slate-900 text-right">${(item.price * item.quantity).toFixed(2)}</td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -132,22 +142,28 @@ export default function Transactions() {
 
             {/* Modal Footer: Totals */}
             <div className="p-6 bg-slate-50 border-t border-slate-200">
-              <div className="w-80 ml-auto bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                <div className="flex justify-between text-sm text-slate-500 font-medium mb-2">
-                  <span>Subtotal</span>
-                  <span className="text-slate-800 font-bold">${selectedSale.subtotal.toFixed(2)}</span>
+              {user?.role === 'Admin' ? (
+                <div className="w-80 ml-auto bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                  <div className="flex justify-between text-sm text-slate-500 font-medium mb-2">
+                    <span>Subtotal</span>
+                    <span className="text-slate-800 font-bold">${selectedSale.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-500 font-medium pb-4 border-b border-slate-100">
+                    <span>Tax (Calculated)</span>
+                    <span className="text-slate-800 font-bold">${selectedSale.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3">
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Value</span>
+                    <span className="text-2xl font-black text-primary-600 flex items-center gap-1">
+                      <span className="text-sm font-bold text-primary-400">$</span>{selectedSale.total.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm text-slate-500 font-medium pb-4 border-b border-slate-100">
-                  <span>Tax (Calculated)</span>
-                  <span className="text-slate-800 font-bold">${selectedSale.tax.toFixed(2)}</span>
+              ) : (
+                <div className="w-full text-center text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 py-4">
+                  <ShieldAlert size={16} /> Financial totals are restricted to Admin view.
                 </div>
-                <div className="flex justify-between items-center pt-3">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Value</span>
-                  <span className="text-2xl font-black text-primary-600 flex items-center gap-1">
-                    <span className="text-sm font-bold text-primary-400">$</span>{selectedSale.total.toFixed(2)}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
             
           </div>

@@ -29,8 +29,12 @@ var UserSchema = new Schema({
 	},
 	role: {
 		type: String,
-		enum: ["Admin", "Worker"],
-		default: "Worker"
+		enum: [
+			"Admin",
+			"Employee",
+			"Stock Manager"
+		],
+		default: "Employee"
 	}
 }, { timestamps: true });
 var User = mongoose.model("User", UserSchema);

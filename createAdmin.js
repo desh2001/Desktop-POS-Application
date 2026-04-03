@@ -8,7 +8,7 @@ const uri = 'mongodb://127.0.0.1:27017/posdb';
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['Admin', 'Worker'], default: 'Worker' }
+  role: { type: String, enum: ['Admin', 'Employee', 'Stock Manager'], default: 'Employee' }
 });
 
 const User = mongoose.model('User', userSchema);

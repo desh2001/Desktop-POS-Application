@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Shield, User, Users as UsersIcon } from 'lucide-react';
+import { Edit, Trash2, Plus, Shield, User, Users as UsersIcon, Package } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 export default function Users() {
   const currentUser = useAuthStore(state => state.user);
   const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ _id: '', username: '', password: '', role: 'Worker' });
+  const [formData, setFormData] = useState({ _id: '', username: '', password: '', role: 'Employee' });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,9 +60,9 @@ export default function Users() {
   const openModal = (user?: any) => {
     setError(null);
     if (user) {
-      setFormData({ _id: user._id, username: user.username, password: '', role: user.role || 'Worker' });
+      setFormData({ _id: user._id, username: user.username, password: '', role: user.role || 'Employee' });
     } else {
-      setFormData({ _id: '', username: '', password: '', role: 'Worker' });
+      setFormData({ _id: '', username: '', password: '', role: 'Employee' });
     }
     setShowModal(true);
   };
@@ -94,9 +94,9 @@ export default function Users() {
                 <td className="p-4 font-bold text-slate-500 font-mono text-sm uppercase">#{u._id.toString().slice(-8)}</td>
                 <td className="p-4 font-bold text-slate-800 text-md">{u.username} {currentUser.id === u._id && <span className="text-[10px] ml-2 text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full uppercase tracking-widest">You</span>}</td>
                 <td className="p-4">
-                  <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest flex items-center w-max gap-1.5 ${u.role === 'Admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {u.role === 'Admin' ? <Shield size={12}/> : <User size={12}/>}
-                    {u.role || 'Worker'}
+                  <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest flex items-center w-max gap-1.5 ${u.role === 'Admin' ? 'bg-indigo-100 text-indigo-700' : u.role === 'Stock Manager' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {u.role === 'Admin' ? <Shield size={12}/> : u.role === 'Stock Manager' ? <Package size={12}/> : <User size={12}/>}
+                    {u.role || 'Employee'}
                   </span>
                 </td>
                 <td className="p-4 flex justify-center space-x-4">
@@ -130,7 +130,8 @@ export default function Users() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Authorization Level</label>
                 <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 outline-none shadow-sm cursor-pointer">
-                  <option value="Worker">Cashier / Worker</option>
+                  <option value="Employee">Employee (Cashier)</option>
+                  <option value="Stock Manager">Stock Manager</option>
                   <option value="Admin">Administrator</option>
                 </select>
               </div>

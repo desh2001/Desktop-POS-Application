@@ -22,7 +22,7 @@ export default function Login() {
       
       if (response.success) {
         login(response.user);
-        navigate(response.user.role === 'Admin' ? '/admin' : '/cashier');
+        navigate(['Admin', 'Stock Manager'].includes(response.user.role) ? '/admin' : '/cashier');
       } else {
         setError(response.message);
       }
