@@ -315,6 +315,7 @@ export default function Cashier() {
             <div className="pt-4 space-y-4">
               <div className="relative">
                 <CreditCard size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                
                 <input 
                   type="number" 
                   min={total.toFixed(2)}
@@ -324,7 +325,11 @@ export default function Cashier() {
                   className="w-full pl-11 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none text-right font-black text-xl text-white transition-all"
                   placeholder="0.00"
                 />
-                <span className="absolute left-11 -top-2 px-2 bg-[#1a2333] text-[10px] font-black text-emerald-500 uppercase tracking-widest">Cash Tendered</span>
+
+                {/* FIXED LABEL POSITIONING */}
+                <span className="absolute left-4 -top-2.5 px-2 bg-[#161e2f] text-[10px] font-black text-emerald-500 uppercase tracking-widest border-x border-white/10">
+                  Cash Tendered
+                </span>
               </div>
               
               <div className="flex justify-between items-center p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">

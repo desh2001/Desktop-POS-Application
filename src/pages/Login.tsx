@@ -55,7 +55,7 @@ export default function Login() {
             <img src={logoSvg} alt="Company Logo" className="relative w-48 h-auto mb-8 drop-shadow-2xl transition-transform duration-700 hover:scale-105" />
           </div>
           <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 tracking-tighter mb-2 uppercase">PC ZONE</h1>
-          <p className="text-blue-400 font-medium tracking-[0.3em] text-xs uppercase opacity-80">The Master's Choice</p>
+          <p className="text-blue-400 font-medium tracking-[0.3em] text-xs uppercase opacity-80">{import.meta.env.VITE_STORE_MOTTO || "The Master's Choice"}</p>
         </div>
 
         {/* RIGHT SIDE: LOGIN FORM */}

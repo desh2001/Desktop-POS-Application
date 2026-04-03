@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { History, Receipt, X, PackageOpen, MousePointerClick, ShieldAlert } from 'lucide-react';
+import { History, Receipt, X, PackageOpen, MousePointerClick, ShieldAlert, Calendar, Activity, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 export default function Transactions() {
@@ -24,113 +24,162 @@ export default function Transactions() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* HEADER SECTION */}
+      <div className="flex justify-between items-end">
         <div>
-           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-             <History size={26} className="text-primary-600"/> Transaction History
-           </h1>
-           <p className="text-slate-500 mt-1 flex items-center gap-2 text-sm"><MousePointerClick size={14}/> Click on any transaction row to view the detailed electronic receipt.</p>
+          <h1 className="text-3xl font-black text-white tracking-tight uppercase flex items-center gap-4">
+            Digital <span className="text-blue-500">Ledger</span>
+          </h1>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-2 flex items-center gap-2">
+            <Activity size={14} className="text-blue-500"/> System Transaction Log
+          </p>
+        </div>
+        <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <MousePointerClick size={12} className="text-blue-500"/> Select row for e-receipt
+          </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* TRANSACTION TABLE */}
+      <div className="bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl relative">
         {loading ? (
-           <div className="p-10 text-center text-slate-500 font-medium animate-pulse">Loading transaction database...</div>
+          <div className="p-20 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Syncing Database...</p>
+          </div>
         ) : (
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-              <tr>
-                <th className="p-4 uppercase text-xs font-black tracking-widest">Transaction ID</th>
-                <th className="p-4 uppercase text-xs font-black tracking-widest">Date & Time</th>
-                <th className="p-4 uppercase text-xs font-black tracking-widest text-center">Items Sold Out</th>
-                {user?.role === 'Admin' && <th className="p-4 uppercase text-xs font-black tracking-widest text-right">Revenue</th>}
-                <th className="p-4 uppercase text-xs font-black tracking-widest text-center">Status</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 bg-white/[0.02]">
+                <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Reference ID</th>
+                <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Timestamp</th>
+                <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Volume</th>
+                {user?.role === 'Admin' && <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Revenue</th>}
+                <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Protocol</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-white/5">
               {sales.map(sale => (
                 <tr 
                   key={sale._id} 
                   onClick={() => setSelectedSale(sale)}
-                  className="hover:bg-primary-50 cursor-pointer transition-colors group"
+                  className="hover:bg-white/[0.03] cursor-pointer transition-all group"
                 >
-                  <td className="p-4 font-bold text-slate-800 font-mono text-sm flex items-center gap-2">
-                     <Receipt size={14} className="text-slate-400 group-hover:text-primary-600 transition-colors"/>
-                     #{sale._id.toString().slice(-8).toUpperCase()}
+                  <td className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <Receipt size={16} />
+                      </div>
+                      <span className="font-mono text-sm font-bold text-white tracking-wider">
+                        #{sale._id.toString().slice(-8).toUpperCase()}
+                      </span>
+                    </div>
                   </td>
-                  <td className="p-4 text-slate-500 text-sm font-medium">
-                    {new Date(sale.createdAt).toLocaleDateString()} <span className="text-slate-400 ml-1 text-xs">{new Date(sale.createdAt).toLocaleTimeString()}</span>
+                  <td className="p-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">
+                        {new Date(sale.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        {new Date(sale.createdAt).toLocaleTimeString()}
+                      </span>
+                    </div>
                   </td>
-                  <td className="p-4 text-slate-600 text-sm font-bold text-center group-hover:text-primary-700">
-                    {sale.items.length} Product(s)
+                  <td className="p-6 text-center">
+                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-black text-blue-400 uppercase tracking-widest">
+                      {sale.items.length} Units
+                    </span>
                   </td>
-                  {user?.role === 'Admin' && <td className="p-4 text-emerald-600 font-black text-right text-base">${sale.total.toFixed(2)}</td>}
-                  <td className="p-4 text-center">
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-200 shadow-sm">Verified</span>
+                  {user?.role === 'Admin' && (
+                    <td className="p-6 text-right">
+                      <span className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
+                        ${sale.total.toFixed(2)}
+                      </span>
+                    </td>
+                  )}
+                  <td className="p-6 text-center">
+                    <div className="flex justify-center items-center gap-2">
+                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                        Verified
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
               {sales.length === 0 && (
-                <tr><td colSpan={user?.role === 'Admin' ? 5 : 4} className="p-12 text-center text-slate-400 font-medium">No stock out transactions have been recorded yet.</td></tr>
+                <tr>
+                  <td colSpan={user?.role === 'Admin' ? 5 : 4} className="p-24 text-center">
+                    <div className="flex flex-col items-center opacity-20">
+                      <History size={48} className="mb-4 text-slate-400" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Logs Detected</p>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         )}
       </div>
 
-      {/* Transaction Details Modal Overlay */}
+      {/* RECEIPT MODAL */}
       {selectedSale && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-0 w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-[100] p-6 animate-in fade-in duration-300">
+          <div className="bg-[#1e293b] border border-white/10 rounded-[2.5rem] w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <div>
-                <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                  <span className="p-2 bg-primary-100 text-primary-600 rounded-lg"><Receipt size={20} /></span> 
-                  Internal e-Receipt #{selectedSale._id.toString().slice(-8).toUpperCase()}
-                </h2>
-                <p className="text-sm text-slate-500 mt-2 font-medium flex items-center gap-2">
-                  Processed on {new Date(selectedSale.createdAt).toLocaleDateString()} at {new Date(selectedSale.createdAt).toLocaleTimeString()}
-                </p>
+            <div className="p-8 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
+                  <Receipt size={28} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">System <span className="text-blue-500">Receipt</span></h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                    <Calendar size={12}/> {new Date(selectedSale.createdAt).toLocaleString()}
+                  </p>
+                </div>
               </div>
               <button 
                 onClick={() => setSelectedSale(null)} 
-                className="p-2 text-slate-400 hover:text-red-600 hover:bg-slate-200 rounded-full transition-colors"
+                className="p-3 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-500 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-red-500/30"
               >
-                <X size={20} className="stroke-[3]" />
+                <X size={20} />
               </button>
             </div>
             
-            {/* Modal Body: Scanned Items List */}
-            <div className="p-8 overflow-y-auto flex-1 bg-white">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                 <PackageOpen size={16} className="text-slate-400"/> Scanned Itemized List
-              </h3>
+            {/* Scanned Items */}
+            <div className="p-10 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                   <PackageOpen size={16} className="text-blue-500"/> Itemized Distribution
+                </h3>
+                <span className="text-xs font-mono text-blue-500 font-bold opacity-60">ID: #{selectedSale._id.slice(-12).toUpperCase()}</span>
+              </div>
               
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="rounded-2xl border border-white/5 overflow-hidden">
                 <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200">
+                  <thead className="bg-white/5">
                     <tr>
-                      <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Description</th>
-                      <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center w-20">Qty</th>
+                      <th className="p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Asset Name</th>
+                      <th className="p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Qty</th>
                       {user?.role === 'Admin' && (
                         <>
-                          <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Unit Price</th>
-                          <th className="p-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right w-24">Amount</th>
+                          <th className="p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Unit</th>
+                          <th className="p-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Extended</th>
                         </>
                       )}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-white/5">
                     {selectedSale.items.map((item: any, i: number) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="p-4 text-sm font-bold text-slate-800">{item.name}</td>
-                        <td className="p-4 text-sm font-black text-slate-600 text-center bg-slate-50/30">{item.quantity}</td>
+                      <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4 text-xs font-bold text-white uppercase tracking-wider">{item.name}</td>
+                        <td className="p-4 text-xs font-black text-blue-400 text-center">{item.quantity}</td>
                         {user?.role === 'Admin' && (
                           <>
-                            <td className="p-4 text-sm text-slate-500 font-medium text-right">${item.price.toFixed(2)}</td>
-                            <td className="p-4 text-sm font-black text-slate-900 text-right">${(item.price * item.quantity).toFixed(2)}</td>
+                            <td className="p-4 text-xs text-slate-500 font-bold text-right">${item.price.toFixed(2)}</td>
+                            <td className="p-4 text-xs font-black text-white text-right">${(item.price * item.quantity).toFixed(2)}</td>
                           </>
                         )}
                       </tr>
@@ -141,29 +190,37 @@ export default function Transactions() {
             </div>
 
             {/* Modal Footer: Totals */}
-            <div className="p-6 bg-slate-50 border-t border-slate-200">
+            <div className="p-10 bg-slate-900 border-t border-white/10">
               {user?.role === 'Admin' ? (
-                <div className="w-80 ml-auto bg-white rounded-xl shadow-sm border border-slate-100 p-4">
-                  <div className="flex justify-between text-sm text-slate-500 font-medium mb-2">
-                    <span>Subtotal</span>
-                    <span className="text-slate-800 font-bold">${selectedSale.subtotal.toFixed(2)}</span>
+                <div className="max-w-xs ml-auto space-y-3">
+                  <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <span>Base Value</span>
+                    <span className="text-slate-300">${selectedSale.subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-slate-500 font-medium pb-4 border-b border-slate-100">
-                    <span>Tax (Calculated)</span>
-                    <span className="text-slate-800 font-bold">${selectedSale.tax.toFixed(2)}</span>
+                  <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest pb-3 border-b border-white/10">
+                    <span>Service Tax</span>
+                    <span className="text-slate-300">${selectedSale.tax.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-3">
-                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Value</span>
-                    <span className="text-2xl font-black text-primary-600 flex items-center gap-1">
-                      <span className="text-sm font-bold text-primary-400">$</span>{selectedSale.total.toFixed(2)}
+                  <div className="flex justify-between items-end pt-2">
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">Total Credits</span>
+                    <span className="text-3xl font-black text-white leading-none">
+                      <span className="text-sm opacity-30 mr-1">$</span>{selectedSale.total.toFixed(2)}
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="w-full text-center text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 py-4">
-                  <ShieldAlert size={16} /> Financial totals are restricted to Admin view.
+                <div className="flex flex-col items-center justify-center py-4 bg-red-500/5 rounded-2xl border border-red-500/10">
+                  <ShieldAlert size={20} className="text-red-500/50 mb-2" />
+                  <p className="text-[9px] font-black text-red-500/50 uppercase tracking-[0.2em]">Financial Data Restricted</p>
                 </div>
               )}
+              
+              <button 
+                onClick={() => setSelectedSale(null)}
+                className="w-full mt-8 py-4 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl border border-white/10 transition-all cursor-pointer"
+              >
+                Close Connection
+              </button>
             </div>
             
           </div>
