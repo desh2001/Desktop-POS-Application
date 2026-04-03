@@ -19,10 +19,11 @@ export default function Inventory() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData._id) {
-      await (window as any).api.inventory.updateItem(formData._id, formData);
+    const { _id, ...submitData } = formData;
+    if (_id) {
+      await (window as any).api.inventory.updateItem(_id, { _id, ...submitData });
     } else {
-      await (window as any).api.inventory.addItem(formData);
+      await (window as any).api.inventory.addItem(submitData);
     }
     setShowModal(false);
     loadItems();

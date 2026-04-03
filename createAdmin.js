@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 // Default MongoDB URI used in the application
-const uri = 'mongodb://127.0.0.1:27017/posdb';
+const uri = 'mongodb+srv://admin:admin123@cluster0.xdxjpuc.mongodb.net/?appName=Cluster0';
 
 // Minimal definition of the User schema for the purpose of seeding
 const userSchema = new mongoose.Schema({

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import Inventory from './Inventory';
 import Settings from './Settings';
