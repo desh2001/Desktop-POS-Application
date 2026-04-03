@@ -1,1 +1,47 @@
-let e=require(`electron`);e.contextBridge.exposeInMainWorld(`api`,{ping:()=>e.ipcRenderer.invoke(`ping`),auth:{login:t=>e.ipcRenderer.invoke(`auth:login`,t),initAdmin:t=>e.ipcRenderer.invoke(`auth:initAdmin`,t)},users:{getUsers:()=>e.ipcRenderer.invoke(`users:get`),addUser:t=>e.ipcRenderer.invoke(`users:add`,t),updateUser:(t,n)=>e.ipcRenderer.invoke(`users:update`,{id:t,data:n}),deleteUser:t=>e.ipcRenderer.invoke(`users:delete`,t)},inventory:{getItems:()=>e.ipcRenderer.invoke(`items:get`),addItem:t=>e.ipcRenderer.invoke(`items:add`,t),updateItem:(t,n)=>e.ipcRenderer.invoke(`items:update`,{id:t,updateData:n}),deleteItem:t=>e.ipcRenderer.invoke(`items:delete`,t)},settings:{getSetting:t=>e.ipcRenderer.invoke(`settings:get`,t),setSetting:(t,n)=>e.ipcRenderer.invoke(`settings:set`,{key:t,value:n})},sales:{createSale:t=>e.ipcRenderer.invoke(`sales:create`,t),getSales:()=>e.ipcRenderer.invoke(`sales:get`)},quotations:{createQuotation:t=>e.ipcRenderer.invoke(`quotations:create`,t),getQuotations:()=>e.ipcRenderer.invoke(`quotations:get`)},print:{generatePdf:(t,n)=>e.ipcRenderer.invoke(`pdf:generate`,{urlPath:t,filename:n})}});
+let electron = require("electron");
+//#region src/preload/index.ts
+electron.contextBridge.exposeInMainWorld("api", {
+	ping: () => electron.ipcRenderer.invoke("ping"),
+	auth: {
+		login: (credentials) => electron.ipcRenderer.invoke("auth:login", credentials),
+		initAdmin: (credentials) => electron.ipcRenderer.invoke("auth:initAdmin", credentials)
+	},
+	users: {
+		getUsers: () => electron.ipcRenderer.invoke("users:get"),
+		addUser: (data) => electron.ipcRenderer.invoke("users:add", data),
+		updateUser: (id, data) => electron.ipcRenderer.invoke("users:update", {
+			id,
+			data
+		}),
+		deleteUser: (id) => electron.ipcRenderer.invoke("users:delete", id)
+	},
+	inventory: {
+		getItems: () => electron.ipcRenderer.invoke("items:get"),
+		addItem: (data) => electron.ipcRenderer.invoke("items:add", data),
+		updateItem: (id, data) => electron.ipcRenderer.invoke("items:update", {
+			id,
+			updateData: data
+		}),
+		deleteItem: (id) => electron.ipcRenderer.invoke("items:delete", id)
+	},
+	settings: {
+		getSetting: (key) => electron.ipcRenderer.invoke("settings:get", key),
+		setSetting: (key, value) => electron.ipcRenderer.invoke("settings:set", {
+			key,
+			value
+		})
+	},
+	sales: {
+		createSale: (data) => electron.ipcRenderer.invoke("sales:create", data),
+		getSales: () => electron.ipcRenderer.invoke("sales:get")
+	},
+	quotations: {
+		createQuotation: (data) => electron.ipcRenderer.invoke("quotations:create", data),
+		getQuotations: () => electron.ipcRenderer.invoke("quotations:get")
+	},
+	print: { generatePdf: (urlPath, filename) => electron.ipcRenderer.invoke("pdf:generate", {
+		urlPath,
+		filename
+	}) }
+});
+//#endregion

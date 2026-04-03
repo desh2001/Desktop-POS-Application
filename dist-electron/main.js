@@ -1,30 +1,31 @@
-import { BrowserWindow as e, app as t, ipcMain as n } from "electron";
-import r, { dirname as i, join as a } from "path";
-import { fileURLToPath as o } from "url";
+import { BrowserWindow, app, ipcMain } from "electron";
+import path, { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import "dotenv/config";
-import s, { Schema as c } from "mongoose";
-import l from "bcryptjs";
-import u from "fs";
+import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcryptjs";
+import fs from "fs";
 //#region src/main/database.ts
-var d = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/posdb";
-async function f() {
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/posdb";
+async function connectDB() {
 	try {
-		await s.connect(d), console.log("Successfully connected to MongoDB.");
-	} catch (e) {
-		console.error("Error connecting to MongoDB:", e);
+		await mongoose.connect(MONGODB_URI);
+		console.log("Successfully connected to MongoDB.");
+	} catch (error) {
+		console.error("Error connecting to MongoDB:", error);
 	}
 }
 //#endregion
 //#region src/main/models/User.ts
-var p = new c({
+var UserSchema = new Schema({
 	username: {
 		type: String,
-		required: !0,
-		unique: !0
+		required: true,
+		unique: true
 	},
 	password: {
 		type: String,
-		required: !0
+		required: true
 	},
 	role: {
 		type: String,
@@ -35,456 +36,502 @@ var p = new c({
 		],
 		default: "Employee"
 	}
-}, { timestamps: !0 }), m = s.model("User", p);
+}, { timestamps: true });
+var User = mongoose.model("User", UserSchema);
 //#endregion
 //#region src/main/auth.ts
-function h() {
-	n.handle("auth:login", async (e, { username: t, password: n }) => {
+function registerAuthHandlers() {
+	ipcMain.handle("auth:login", async (_, { username, password }) => {
 		try {
-			let e = await m.findOne({ username: t });
-			return e ? await l.compare(n, e.password) ? {
-				success: !0,
-				user: {
-					id: e._id.toString(),
-					username: e.username,
-					role: e.role
-				}
-			} : {
-				success: !1,
-				message: "Invalid password"
-			} : {
-				success: !1,
+			const user = await User.findOne({ username });
+			if (!user) return {
+				success: false,
 				message: "User not found"
 			};
-		} catch (e) {
+			if (!await bcrypt.compare(password, user.password)) return {
+				success: false,
+				message: "Invalid password"
+			};
 			return {
-				success: !1,
-				message: e.message
+				success: true,
+				user: {
+					id: user._id.toString(),
+					username: user.username,
+					role: user.role
+				}
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("auth:initAdmin", async (e, { username: t, password: n }) => {
+	});
+	ipcMain.handle("auth:initAdmin", async (_, { username, password }) => {
 		try {
-			return await m.countDocuments() > 0 ? {
-				success: !1,
+			if (await User.countDocuments() > 0) return {
+				success: false,
 				message: "Database already initialized"
-			} : (await new m({
-				username: t,
-				password: await l.hash(n, 10),
+			};
+			await new User({
+				username,
+				password: await bcrypt.hash(password, 10),
 				role: "Admin"
-			}).save(), {
-				success: !0,
+			}).save();
+			return {
+				success: true,
 				message: "Admin initialized successfully"
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("users:get", async () => {
+		try {
+			const users = await User.find({}, "-password");
+			return {
+				success: true,
+				users: JSON.parse(JSON.stringify(users))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
+			};
+		}
+	});
+	ipcMain.handle("users:add", async (_, { username, password, role }) => {
+		try {
+			const newUser = new User({
+				username,
+				password: await bcrypt.hash(password, 10),
+				role
 			});
-		} catch (e) {
+			await newUser.save();
+			const safeUser = {
+				_id: newUser._id,
+				username: newUser.username,
+				role: newUser.role,
+				createdAt: newUser.createdAt
+			};
 			return {
-				success: !1,
-				message: e.message
+				success: true,
+				user: JSON.parse(JSON.stringify(safeUser))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("users:get", async () => {
+	});
+	ipcMain.handle("users:update", async (_, { id, data }) => {
 		try {
-			let e = await m.find({}, "-password");
+			if (data.password) data.password = await bcrypt.hash(data.password, 10);
+			else delete data.password;
+			const updated = await User.findByIdAndUpdate(id, data, { new: true });
 			return {
-				success: !0,
-				users: JSON.parse(JSON.stringify(e))
+				success: true,
+				user: JSON.parse(JSON.stringify(updated))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("users:add", async (e, { username: t, password: n, role: r }) => {
+	});
+	ipcMain.handle("users:delete", async (_, id) => {
 		try {
-			let e = new m({
-				username: t,
-				password: await l.hash(n, 10),
-				role: r
-			});
-			await e.save();
-			let i = {
-				_id: e._id,
-				username: e.username,
-				role: e.role,
-				createdAt: e.createdAt
-			};
+			await User.findByIdAndDelete(id);
+			return { success: true };
+		} catch (err) {
 			return {
-				success: !0,
-				user: JSON.parse(JSON.stringify(i))
-			};
-		} catch (e) {
-			return {
-				success: !1,
-				message: e.message
-			};
-		}
-	}), n.handle("users:update", async (e, { id: t, data: n }) => {
-		try {
-			n.password ? n.password = await l.hash(n.password, 10) : delete n.password;
-			let e = await m.findByIdAndUpdate(t, n, { new: !0 });
-			return {
-				success: !0,
-				user: JSON.parse(JSON.stringify(e))
-			};
-		} catch (e) {
-			return {
-				success: !1,
-				message: e.message
-			};
-		}
-	}), n.handle("users:delete", async (e, t) => {
-		try {
-			return await m.findByIdAndDelete(t), { success: !0 };
-		} catch (e) {
-			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
 	});
 }
 //#endregion
 //#region src/main/models/Item.ts
-var g = new c({
+var ItemSchema = new Schema({
 	name: {
 		type: String,
-		required: !0
+		required: true
 	},
 	price: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	stock: {
 		type: Number,
-		required: !0,
+		required: true,
 		default: 0
 	},
 	category: {
 		type: String,
 		default: "General"
 	}
-}, { timestamps: !0 }), _ = s.model("Item", g), v = new c({
+}, { timestamps: true });
+var Item = mongoose.model("Item", ItemSchema);
+//#endregion
+//#region src/main/models/Setting.ts
+var SettingSchema = new Schema({
 	key: {
 		type: String,
-		required: !0,
-		unique: !0
+		required: true,
+		unique: true
 	},
 	value: {
-		type: c.Types.Mixed,
-		required: !0
+		type: Schema.Types.Mixed,
+		required: true
 	}
-}, { timestamps: !0 }), y = s.model("Setting", v);
+}, { timestamps: true });
+var Setting = mongoose.model("Setting", SettingSchema);
 //#endregion
 //#region src/main/inventory.ts
-function b() {
-	n.handle("items:get", async () => {
+function registerInventoryHandlers() {
+	ipcMain.handle("items:get", async () => {
 		try {
-			let e = await _.find({});
+			const items = await Item.find({});
 			return {
-				success: !0,
-				items: JSON.parse(JSON.stringify(e))
+				success: true,
+				items: JSON.parse(JSON.stringify(items))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("items:add", async (e, t) => {
+	});
+	ipcMain.handle("items:add", async (_, itemData) => {
 		try {
-			let e = new _(t);
-			return await e.save(), {
-				success: !0,
-				item: JSON.parse(JSON.stringify(e))
-			};
-		} catch (e) {
+			const newItem = new Item(itemData);
+			await newItem.save();
 			return {
-				success: !1,
-				message: e.message
+				success: true,
+				item: JSON.parse(JSON.stringify(newItem))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("items:update", async (e, { id: t, updateData: n }) => {
+	});
+	ipcMain.handle("items:update", async (_, { id, updateData }) => {
 		try {
-			let e = await _.findByIdAndUpdate(t, n, { new: !0 });
+			const updated = await Item.findByIdAndUpdate(id, updateData, { new: true });
 			return {
-				success: !0,
-				item: JSON.parse(JSON.stringify(e))
+				success: true,
+				item: JSON.parse(JSON.stringify(updated))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("items:delete", async (e, t) => {
+	});
+	ipcMain.handle("items:delete", async (_, id) => {
 		try {
-			return await _.findByIdAndDelete(t), { success: !0 };
-		} catch (e) {
+			await Item.findByIdAndDelete(id);
+			return { success: true };
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("settings:get", async (e, t) => {
+	});
+	ipcMain.handle("settings:get", async (_, key) => {
 		try {
-			let e = await y.findOne({ key: t });
+			const setting = await Setting.findOne({ key });
 			return {
-				success: !0,
-				value: e ? e.value : null
+				success: true,
+				value: setting ? setting.value : null
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("settings:set", async (e, { key: t, value: n }) => {
+	});
+	ipcMain.handle("settings:set", async (_, { key, value }) => {
 		try {
-			let e = await y.findOneAndUpdate({ key: t }, { value: n }, {
-				upsert: !0,
-				new: !0
+			const setting = await Setting.findOneAndUpdate({ key }, { value }, {
+				upsert: true,
+				new: true
 			});
 			return {
-				success: !0,
-				setting: JSON.parse(JSON.stringify(e))
+				success: true,
+				setting: JSON.parse(JSON.stringify(setting))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
 	});
 }
 //#endregion
 //#region src/main/models/Sale.ts
-var x = new c({
+var SaleItemSchema = new Schema({
 	item: {
-		type: c.Types.ObjectId,
+		type: Schema.Types.ObjectId,
 		ref: "Item"
 	},
 	name: {
 		type: String,
-		required: !0
+		required: true
 	},
 	price: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	quantity: {
 		type: Number,
-		required: !0
+		required: true
 	}
-}), S = new c({
+});
+var SaleSchema = new Schema({
 	workerId: {
-		type: c.Types.ObjectId,
+		type: Schema.Types.ObjectId,
 		ref: "User"
 	},
 	customerName: {
 		type: String,
-		required: !1
+		required: false
 	},
-	items: [x],
+	items: [SaleItemSchema],
 	subtotal: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	tax: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	total: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	amountTendered: {
 		type: Number,
-		required: !0,
+		required: true,
 		default: 0
 	},
 	change: {
 		type: Number,
-		required: !0,
+		required: true,
 		default: 0
 	}
-}, { timestamps: !0 }), C = s.model("Sale", S);
+}, { timestamps: true });
+var Sale = mongoose.model("Sale", SaleSchema);
 //#endregion
 //#region src/main/sales.ts
-function w() {
-	n.handle("sales:create", async (e, t) => {
+function registerSalesHandlers() {
+	ipcMain.handle("sales:create", async (_, saleData) => {
 		try {
-			let e = new C(t);
-			await e.save();
-			for (let e of t.items) await _.findByIdAndUpdate(e.item, { $inc: { stock: -e.quantity } });
+			const newSale = new Sale(saleData);
+			await newSale.save();
+			for (const cartItem of saleData.items) await Item.findByIdAndUpdate(cartItem.item, { $inc: { stock: -cartItem.quantity } });
 			return {
-				success: !0,
-				sale: JSON.parse(JSON.stringify(e))
+				success: true,
+				sale: JSON.parse(JSON.stringify(newSale))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("sales:get", async () => {
+	});
+	ipcMain.handle("sales:get", async () => {
 		try {
-			let e = await C.find().sort({ createdAt: -1 });
+			const sales = await Sale.find().sort({ createdAt: -1 });
 			return {
-				success: !0,
-				sales: JSON.parse(JSON.stringify(e))
+				success: true,
+				sales: JSON.parse(JSON.stringify(sales))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
 	});
 }
 //#endregion
 //#region src/main/pdfGenerator.ts
-var T = i(o(import.meta.url));
-function E() {
-	n.handle("pdf:generate", async (n, { urlPath: i, filename: a }) => {
+var __dirname$1 = dirname(fileURLToPath(import.meta.url));
+function registerPdfHandlers() {
+	ipcMain.handle("pdf:generate", async (_, { urlPath, filename }) => {
 		try {
-			let n = new e({
-				show: !1,
+			const win = new BrowserWindow({
+				show: false,
 				webPreferences: {
-					preload: r.join(T, "index.cjs"),
-					nodeIntegration: !1,
-					contextIsolation: !0
+					preload: path.join(__dirname$1, "index.cjs"),
+					nodeIntegration: false,
+					contextIsolation: true
 				}
-			}), o = process.env.VITE_DEV_SERVER_URL ? `${process.env.VITE_DEV_SERVER_URL}#${i}` : `file://${r.join(T, "../dist/index.html")}#${i}`;
-			await n.loadURL(o), await new Promise((e) => setTimeout(e, 1500));
-			let s = await n.webContents.printToPDF({
-				printBackground: !0,
+			});
+			const baseURL = process.env.VITE_DEV_SERVER_URL ? `${process.env.VITE_DEV_SERVER_URL}#${urlPath}` : `file://${path.join(__dirname$1, "../dist/index.html")}#${urlPath}`;
+			await win.loadURL(baseURL);
+			await new Promise((resolve) => setTimeout(resolve, 1500));
+			const pdf = await win.webContents.printToPDF({
+				printBackground: true,
 				margins: {
 					top: 0,
 					bottom: 0,
 					left: 0,
 					right: 0
 				}
-			}), c = r.join(t.getPath("downloads"), a);
-			return u.writeFileSync(c, s), n.close(), {
-				success: !0,
-				path: c
-			};
-		} catch (e) {
+			});
+			const downloadPath = path.join(app.getPath("downloads"), filename);
+			fs.writeFileSync(downloadPath, pdf);
+			win.close();
 			return {
-				success: !1,
-				message: e.message
+				success: true,
+				path: downloadPath
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
 			};
 		}
 	});
 }
 //#endregion
 //#region src/main/models/Quotation.ts
-var D = new c({
+var QuotationItemSchema = new Schema({
 	item: {
-		type: c.Types.ObjectId,
+		type: Schema.Types.ObjectId,
 		ref: "Item"
 	},
 	name: {
 		type: String,
-		required: !0
+		required: true
 	},
 	price: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	quantity: {
 		type: Number,
-		required: !0
+		required: true
 	}
-}), O = new c({
+});
+var QuotationSchema = new Schema({
 	workerId: {
-		type: c.Types.ObjectId,
+		type: Schema.Types.ObjectId,
 		ref: "User"
 	},
 	customerName: {
 		type: String,
-		required: !1
+		required: false
 	},
-	items: [D],
+	items: [QuotationItemSchema],
 	subtotal: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	tax: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	total: {
 		type: Number,
-		required: !0
+		required: true
 	},
 	amountTendered: {
 		type: Number,
-		required: !1,
+		required: false,
 		default: 0
 	},
 	change: {
 		type: Number,
-		required: !1,
+		required: false,
 		default: 0
 	}
-}, { timestamps: !0 }), k = s.model("Quotation", O);
+}, { timestamps: true });
+var Quotation = mongoose.model("Quotation", QuotationSchema);
 //#endregion
 //#region src/main/quotations.ts
-function A() {
-	n.handle("quotations:create", async (e, t) => {
+function registerQuotationHandlers() {
+	ipcMain.handle("quotations:create", async (_, quotationData) => {
 		try {
-			let e = new k(t);
-			return await e.save(), {
-				success: !0,
-				quotation: JSON.parse(JSON.stringify(e))
-			};
-		} catch (e) {
+			const newQuotation = new Quotation(quotationData);
+			await newQuotation.save();
 			return {
-				success: !1,
-				message: e.message
+				success: true,
+				quotation: JSON.parse(JSON.stringify(newQuotation))
+			};
+		} catch (err) {
+			return {
+				success: false,
+				message: err.message
 			};
 		}
-	}), n.handle("quotations:get", async () => {
+	});
+	ipcMain.handle("quotations:get", async () => {
 		try {
-			let e = await k.find().populate("workerId", "username").sort({ createdAt: -1 });
+			const quotations = await Quotation.find().populate("workerId", "username").sort({ createdAt: -1 });
 			return {
-				success: !0,
-				quotations: JSON.parse(JSON.stringify(e))
+				success: true,
+				quotations: JSON.parse(JSON.stringify(quotations))
 			};
-		} catch (e) {
+		} catch (err) {
 			return {
-				success: !1,
-				message: e.message
+				success: false,
+				message: err.message
 			};
 		}
 	});
 }
 //#endregion
 //#region src/main/ipc.ts
-function j() {
-	n.handle("ping", () => "pong"), h(), b(), w(), E(), A();
+function registerIpcHandlers() {
+	ipcMain.handle("ping", () => "pong");
+	registerAuthHandlers();
+	registerInventoryHandlers();
+	registerSalesHandlers();
+	registerPdfHandlers();
+	registerQuotationHandlers();
 }
 //#endregion
 //#region src/main/main.ts
-var M = i(o(import.meta.url));
-function N() {
-	let t = new e({
+var __dirname = dirname(fileURLToPath(import.meta.url));
+function createWindow() {
+	const mainWindow = new BrowserWindow({
 		width: 1200,
 		height: 800,
 		webPreferences: {
-			preload: a(M, "index.cjs"),
-			sandbox: !1,
-			contextIsolation: !0
+			preload: join(__dirname, "index.cjs"),
+			sandbox: false,
+			contextIsolation: true
 		}
 	});
-	process.env.VITE_DEV_SERVER_URL ? t.loadURL(process.env.VITE_DEV_SERVER_URL) : t.loadFile(a(M, "../dist/index.html"));
+	if (process.env.VITE_DEV_SERVER_URL) mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+	else mainWindow.loadFile(join(__dirname, "../dist/index.html"));
 }
-t.whenReady().then(async () => {
-	await f(), j(), N(), t.on("activate", function() {
-		e.getAllWindows().length === 0 && N();
+app.whenReady().then(async () => {
+	await connectDB();
+	registerIpcHandlers();
+	createWindow();
+	app.on("activate", function() {
+		if (BrowserWindow.getAllWindows().length === 0) createWindow();
 	});
-}), t.on("window-all-closed", () => {
-	process.platform !== "darwin" && t.quit();
+});
+app.on("window-all-closed", () => {
+	if (process.platform !== "darwin") app.quit();
 });
 //#endregion
