@@ -51,10 +51,10 @@ export default function Login() {
         {/* LEFT SIDE: BRANDING (Modern Blur) */}
         <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 bg-gradient-to-br from-white/5 to-transparent border-r border-white/10">
           <div className="relative group">
-            <div className="absolute -inset-4 bg-blue-500 rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition duration-1000"></div>
+            <div className="absolute -inset-4 bg-blue-900 rounded-full opacity-20 blur-2xl group-hover:opacity-80 transition duration-1000"></div>
             <img src={logoSvg} alt="Company Logo" className="relative w-48 h-auto mb-8 drop-shadow-2xl transition-transform duration-700 hover:scale-105" />
           </div>
-          <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 tracking-tighter mb-2 uppercase">PC ZONE</h1>
+          <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 tracking-tighter mb-2 uppercase">{import.meta.env.VITE_STORE_NAME || "PC ZONE"}</h1>
           <p className="text-blue-400 font-medium tracking-[0.3em] text-xs uppercase opacity-80">{import.meta.env.VITE_STORE_MOTTO || "The Master's Choice"}</p>
         </div>
 

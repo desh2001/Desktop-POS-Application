@@ -70,7 +70,7 @@ export default function Bill() {
                 <img src={logo} alt="Store Logo" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{storeName}</h1>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{import.meta.env.VITE_STORE_NAME || "PC ZONE"}</h1>
                 <p className="text-primary-600 font-extrabold tracking-[0.2em] uppercase text-[10px] mt-1">
                   {import.meta.env.VITE_STORE_MOTTO || 'PREMIUM QUALITY SERVICE'}
                 </p>
